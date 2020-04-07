@@ -9,43 +9,42 @@ GET("https://opendata.ecdc.europa.eu/covid19/casedistribution/csv", authenticate
 #read the Dataset sheet into “R”. The dataset will be called "data".
 corona <- read.csv(tf)
 
-view(corona)
-
 scorona <- select(corona, dateRep, day, month, year, countriesAndTerritories, cases, deaths, popData2018)
 scorona <- na.omit(scorona)
 
 scorona$dateRep <- as.Date(scorona$dateRep, format = "%d/%m/%y")
 scorona <- filter(scorona, dateRep != "2019/12/31" & dateRep != "2020/12/31")
 
-view(scorona)
-#head(corona)
-tail(scorona)
+scorona <- arrange(scorona, countriesAndTerritories, year, month, day)
 
-scorona <- arrange(scorona, year, month, day, countriesAndTerritories)
+head(scorona)
+#scorona <- filter(scorona, countriesAndTerritories == "China")
+#thedata <- sum(scorona$cases)
+#thedata
 
-overalldata <- data.frame("date" = scorona$dateRep, "Country" = scorona$countriesAndTerritories, "Overall_cases" = 0)
+cumdata <- data.frame(matrix(ncol = 3, nrow = 0))
+names <- c("date", "country", "cases")
+colnames(cumdata) <- names
 
-calcOverall <- function(df, country, date)
+calcOverall <- function(df, country)
 {
-    df <- filter(df, (df$countriesAndTerritories == country) & (df$dateRep <= date))
+    df <- filter(df, df$countriesAndTerritories == country)
     overall <- cumsum(df$cases)
-    return(overall)
+    udf <- data.frame("date" = df$dateRep, "country" = country, "cases" = overall)
+    return(udf)
 }
 
-for(country in scorona$countriesAndTerritories)
+for(country in unique(scorona$countriesAndTerritories))
 {
-    cumcases <- calcOverall(scorona, country, (scorona[country,])$dateRep)
-    overalldata[country,]$Overall_cases <- cumcases
+    temp <- calcOverall(scorona, country)
+    print(temp)
+    cumdata <- rbind(cumdata, temp)
 }
 
-tail(overalldata)
+head(cumdata)
 
-cplot <- ggplot(data = overalldata, aes(x = date, color = country)) +
-    geom_line(aes(y = Overall_cases)) +
+cplot <- ggplot(data = cumdata, aes(x = date, color = country)) +
+    geom_line(aes(y = cases)) +
     scale_x_date(date_labels = "%b %Y")
 
 ggplotly(cplot)
-
-#cplot <- ggplot(data = scorona, aes(x = dateRep, color = countriesAndTerritories)) +
-#    geom_line(aes(y = cases)) +
-#    scale_x_date(date_labels = "%b %Y")
