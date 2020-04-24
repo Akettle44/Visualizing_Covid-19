@@ -31,6 +31,15 @@ calcOverall <- function(df, country)
     return(udf)
 }
 
+calcOverallNorm <- function(df, country) #cases normalized over population
+{
+    df <- filter(df, df$countriesAndTerritories == country)
+    pop <- df[1, "popData2018"]
+    overall <- (cumsum(df$cases) / pop)
+    udf <- data.frame("date" = df$dateRep, "country" = country, "cases" = overall)
+    return(udf)
+}
+
 for(country in unique(scorona$countriesAndTerritories))
 {
     temp <- calcOverall(scorona, country)

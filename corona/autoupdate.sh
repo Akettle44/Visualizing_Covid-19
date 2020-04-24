@@ -1,4 +1,5 @@
 #!/bin/bash
+cd /home/andrew/projects/R/corona
 message=$(date)
 Rscript corona.R
 mv index.html ..
